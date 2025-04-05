@@ -25,10 +25,12 @@ model User {
     ownedHouses    House[]         @relation("HomeownerHouses")
     rentals        Rental[]        @relation("RenterRentals")
     houses         House[]
+    courseRatings  CourseRating[]
+    houseRatings   HouseRating[]
 }
 
 model Course {
-    id               String       @id @default(cuid())
+    id               String         @id @default(cuid())
     title            String
     description      String
     fullDescription  String
@@ -41,14 +43,15 @@ model Course {
     requirements     String // Store as JSON string
     whatYouWillLearn String // Store as JSON string
     instructorId     String
-    instructor       User         @relation("InstructorCourses", fields: [instructorId], references: [id])
-    lastUpdated      DateTime     @default(now())
+    instructor       User           @relation("InstructorCourses", fields: [instructorId], references: [id])
+    lastUpdated      DateTime       @default(now())
     language         String
-    createdAt        DateTime     @default(now())
-    updatedAt        DateTime     @updatedAt
+    createdAt        DateTime       @default(now())
+    updatedAt        DateTime       @updatedAt
     enrollments      Enrollment[]
     Week             Week[]
     Favorite         Favorite[]
+    ratings          CourseRating[]
 
     @@index([instructorId])
 }
@@ -138,6 +141,7 @@ model House {
     favorites       HouseFavorite[]
     User            User?           @relation(fields: [userId], references: [id])
     userId          String?
+    ratings         HouseRating[]
 
     @@index([homeownerId])
 }
@@ -168,4 +172,34 @@ model HouseFavorite {
     createdAt DateTime @default(now())
 
     @@unique([userId, houseId])
+}
+
+model CourseRating {
+    id        String   @id @default(cuid())
+    rating    Int      @default(0)
+    comment   String?
+    userId    String
+    courseId  String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, courseId])
+    @@index([courseId])
+}
+
+model HouseRating {
+    id        String   @id @default(cuid())
+    rating    Int      @default(0)
+    comment   String?
+    userId    String
+    houseId   String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    house     House    @relation(fields: [houseId], references: [id], onDelete: Cascade)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, houseId])
+    @@index([houseId])
 }

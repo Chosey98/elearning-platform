@@ -44,7 +44,21 @@ export default function LoginPage() {
 					title: 'Success',
 					description: 'Logged in successfully',
 				});
-				router.push(callbackUrl);
+
+				// Get the user role from the session
+				const response = await fetch('/api/auth/session');
+				const session = await response.json();
+				const userRole = session?.user?.role;
+
+				// Redirect based on role
+				let redirectUrl = '/dashboard';
+				if (userRole === 'instructor') {
+					redirectUrl = '/dashboard/instructor';
+				} else if (userRole === 'homeowner') {
+					redirectUrl = '/dashboard/homeowner';
+				}
+
+				router.push(redirectUrl);
 				router.refresh();
 			}
 		} catch (error) {

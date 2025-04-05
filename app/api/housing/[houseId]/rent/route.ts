@@ -127,7 +127,7 @@ export async function DELETE(
 				id: house.currentRental.id,
 			},
 			data: {
-				status: 'ended',
+				status: 'completed',
 				endDate: new Date(),
 			},
 		});

@@ -53,6 +53,16 @@ interface House {
 	images: string[];
 	status: string;
 	type: string;
+	homeownerId: string;
+	currentRental?: {
+		id: string;
+		startDate: string;
+		endDate: string | null;
+		renter: {
+			name: string;
+			email: string;
+		};
+	};
 }
 
 // Common amenities list
@@ -96,8 +106,10 @@ export default function ManageHousePage({
 
 	useEffect(() => {
 		if (status === 'unauthenticated') {
+			console.log('User is not authenticated');
 			router.push('/login');
 		} else if (status === 'authenticated') {
+			console.log('User is authenticated:', session);
 			fetchHouse();
 		}
 	}, [status, params.houseId]);
@@ -113,9 +125,13 @@ export default function ManageHousePage({
 
 	const fetchHouse = async () => {
 		try {
+			console.log('Fetching house data for ID:', params.houseId);
 			const response = await fetch(`/api/housing/${params.houseId}`);
 			if (!response.ok) throw new Error('Failed to fetch house');
 			const data = await response.json();
+			console.log('Fetched house data:', data);
+			console.log('Current rental:', data.currentRental);
+			console.log('House status:', data.status);
 			setHouse(data);
 			setFormData(data);
 		} catch (error) {
@@ -256,6 +272,35 @@ export default function ManageHousePage({
 		}
 	};
 
+	const handleEndRental = async () => {
+		try {
+			const response = await fetch(
+				`/api/housing/${params.houseId}/rent`,
+				{
+					method: 'DELETE',
+				}
+			);
+
+			if (!response.ok) {
+				throw new Error('Failed to end rental');
+			}
+
+			toast({
+				title: 'Rental ended successfully',
+				description: 'The tenant can now leave a review.',
+			});
+
+			// Refresh the page to show updated status
+			router.refresh();
+		} catch (error) {
+			toast({
+				title: 'Error',
+				description: 'Failed to end the rental. Please try again.',
+				variant: 'destructive',
+			});
+		}
+	};
+
 	const handleChange = (
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
 	) => {
@@ -304,15 +349,41 @@ export default function ManageHousePage({
 		);
 	}
 
-	if (!house) {
+	if (!house || !session?.user) {
 		return (
 			<div className="container py-10">
 				<Card>
 					<CardHeader>
-						<CardTitle>House Not Found</CardTitle>
+						<CardTitle>Access Denied</CardTitle>
 						<CardDescription>
-							The house you're looking for doesn't exist or you
-							don't have permission to view it.
+							{!house
+								? "The house you're looking for doesn't exist"
+								: "You don't have permission to view this page"}
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<Button
+							onClick={() => router.push('/dashboard/homeowner')}
+						>
+							Back to Dashboard
+						</Button>
+					</CardContent>
+				</Card>
+			</div>
+		);
+	}
+
+	// Check if the current user is the homeowner
+	const isHomeowner = house.homeownerId === session.user.id;
+
+	if (!isHomeowner) {
+		return (
+			<div className="container py-10">
+				<Card>
+					<CardHeader>
+						<CardTitle>Access Denied</CardTitle>
+						<CardDescription>
+							You don't have permission to manage this property.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -520,6 +591,43 @@ export default function ManageHousePage({
 								</div>
 							</div>
 
+							{(formData.status === 'rented' ||
+								formData.currentRental) && (
+								<div className="mt-4">
+									<AlertDialog>
+										<AlertDialogTrigger asChild>
+											<Button variant="destructive">
+												End Rental
+											</Button>
+										</AlertDialogTrigger>
+										<AlertDialogContent>
+											<AlertDialogHeader>
+												<AlertDialogTitle>
+													End Rental
+												</AlertDialogTitle>
+												<AlertDialogDescription>
+													Are you sure you want to end
+													this rental? This will mark
+													the property as available
+													and allow the tenant to
+													leave a rating.
+												</AlertDialogDescription>
+											</AlertDialogHeader>
+											<AlertDialogFooter>
+												<AlertDialogCancel>
+													Cancel
+												</AlertDialogCancel>
+												<AlertDialogAction
+													onClick={handleEndRental}
+												>
+													End Rental
+												</AlertDialogAction>
+											</AlertDialogFooter>
+										</AlertDialogContent>
+									</AlertDialog>
+								</div>
+							)}
+
 							<div className="grid gap-2">
 								<Label>Amenities</Label>
 								<div className="flex flex-wrap gap-2">
@@ -632,6 +740,58 @@ export default function ManageHousePage({
 							</Button>
 						</div>
 					</form>
+
+					{formData.currentRental && (
+						<div className="mt-6 space-y-4 border rounded-lg p-4">
+							<h3 className="text-lg font-semibold">
+								Current Rental
+							</h3>
+							<div className="space-y-2">
+								<p>
+									<span className="font-medium">Tenant:</span>{' '}
+									{formData.currentRental.renter.name}
+								</p>
+								<p>
+									<span className="font-medium">
+										Start Date:
+									</span>{' '}
+									{new Date(
+										formData.currentRental.startDate
+									).toLocaleDateString()}
+								</p>
+								<AlertDialog>
+									<AlertDialogTrigger asChild>
+										<Button variant="destructive">
+											End Rental
+										</Button>
+									</AlertDialogTrigger>
+									<AlertDialogContent>
+										<AlertDialogHeader>
+											<AlertDialogTitle>
+												End Rental
+											</AlertDialogTitle>
+											<AlertDialogDescription>
+												Are you sure you want to end
+												this rental? This will mark the
+												rental as completed and allow
+												the tenant to leave a review.
+											</AlertDialogDescription>
+										</AlertDialogHeader>
+										<AlertDialogFooter>
+											<AlertDialogCancel>
+												Cancel
+											</AlertDialogCancel>
+											<AlertDialogAction
+												onClick={handleEndRental}
+											>
+												End Rental
+											</AlertDialogAction>
+										</AlertDialogFooter>
+									</AlertDialogContent>
+								</AlertDialog>
+							</div>
+						</div>
+					)}
 				</CardContent>
 			</Card>
 		</div>

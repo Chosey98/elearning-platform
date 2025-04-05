@@ -137,7 +137,15 @@ export default function RegisterPage() {
 				description: 'You have successfully registered.',
 			});
 
-			router.push('/dashboard');
+			// Redirect based on role
+			let redirectUrl = '/dashboard';
+			if (formData.role === 'instructor') {
+				redirectUrl = '/dashboard/instructor';
+			} else if (formData.role === 'homeowner') {
+				redirectUrl = '/dashboard/homeowner';
+			}
+
+			router.push(redirectUrl);
 		} catch (error) {
 			toast({
 				title: 'Something went wrong',

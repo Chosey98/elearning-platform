@@ -81,6 +81,19 @@ export async function middleware(request: NextRequest) {
 			console.log('Access denied: Not a homeowner, role is', token.role);
 			return NextResponse.redirect(new URL('/dashboard', request.url));
 		}
+
+		// For the main dashboard, redirect to role-specific dashboard
+		if (pathname === '/dashboard') {
+			if (token.role === 'instructor') {
+				return NextResponse.redirect(
+					new URL('/dashboard/instructor', request.url)
+				);
+			} else if (token.role === 'homeowner') {
+				return NextResponse.redirect(
+					new URL('/dashboard/homeowner', request.url)
+				);
+			}
+		}
 	}
 
 	// For all other authenticated routes, allow access

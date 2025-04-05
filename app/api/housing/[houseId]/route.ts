@@ -10,22 +10,54 @@ export async function GET(
 ) {
 	try {
 		const session = await getServerSession(authOptions);
-		const house = await prisma.house.findUnique({
-			where: {
-				id: params.houseId,
-			},
-			include: {
-				homeowner: {
-					select: {
-						id: true,
-						name: true,
-						email: true,
+
+		const [house, rental, ratings] = await Promise.all([
+			prisma.house.findUnique({
+				where: {
+					id: params.houseId,
+				},
+				include: {
+					homeowner: {
+						select: {
+							id: true,
+							name: true,
+							email: true,
+						},
+					},
+					rentals: {
+						where: {
+							status: 'active',
+						},
+						include: {
+							renter: {
+								select: {
+									name: true,
+									email: true,
+								},
+							},
+						},
+						take: 1,
+						orderBy: {
+							startDate: 'desc',
+						},
 					},
 				},
-				rentals: true,
-				currentRental: true,
-			},
-		});
+			}),
+			session?.user?.id
+				? prisma.rental.findFirst({
+						where: {
+							renterId: session.user.id,
+							houseId: params.houseId,
+							status: 'completed',
+						},
+				  })
+				: null,
+			prisma.houseRating.findMany({
+				where: {
+					houseId: params.houseId,
+				},
+			}),
+		]);
 
 		if (!house) {
 			return NextResponse.json(
@@ -35,38 +67,50 @@ export async function GET(
 		}
 
 		// Parse JSON strings back to arrays
-		const parsedHouse = {
+		const amenities =
+			typeof house.amenities === 'string'
+				? JSON.parse(house.amenities)
+				: house.amenities;
+		const images =
+			typeof house.images === 'string'
+				? JSON.parse(house.images)
+				: house.images;
+
+		// Get current rental if exists
+		const currentRental = house.rentals[0];
+
+		const publicHouse = {
 			...house,
-			amenities: JSON.parse(house.amenities),
-			images: JSON.parse(house.images),
-			latitude: house.latitude || undefined,
-			longitude: house.longitude || undefined,
+			amenities,
+			images,
+			homeownerId: house.homeownerId,
+			currentRental: currentRental
+				? {
+						id: currentRental.id,
+						startDate: currentRental.startDate,
+						endDate: currentRental.endDate,
+						renter: currentRental.renter,
+				  }
+				: null,
 		};
 
-		// If user is not authenticated or not the homeowner, remove sensitive information
-		type PublicHouse = Omit<
-			typeof parsedHouse,
-			'rentals' | 'currentRental' | 'homeowner'
-		> & {
-			rentals?: typeof parsedHouse.rentals;
-			currentRental?: typeof parsedHouse.currentRental;
-			homeowner: Omit<typeof parsedHouse.homeowner, 'email'> & {
-				email?: string | null;
-			};
-		};
+		// Calculate average rating
+		const averageRating =
+			ratings.length > 0
+				? ratings.reduce((acc, curr) => acc + curr.rating, 0) /
+				  ratings.length
+				: 0;
 
-		const publicHouse: PublicHouse = { ...parsedHouse };
-		if (!session?.user || house.homeownerId !== session.user.id) {
-			delete publicHouse.rentals;
-			delete publicHouse.currentRental;
-			delete publicHouse.homeowner.email;
-		}
-
-		return NextResponse.json(publicHouse);
+		return NextResponse.json({
+			...publicHouse,
+			hasRented: !!rental,
+			rating: averageRating,
+			reviewsCount: ratings.length,
+		});
 	} catch (error) {
-		console.error('Error fetching house:', error);
+		console.error('Error in GET /api/housing/[houseId]:', error);
 		return NextResponse.json(
-			{ error: 'Failed to fetch house' },
+			{ error: 'Internal server error' },
 			{ status: 500 }
 		);
 	}
@@ -86,15 +130,6 @@ export async function PUT(
 				{ status: 401 }
 			);
 		}
-
-		const house = await prisma.house.findUnique({
-			where: {
-				id: params.houseId,
-			},
-			select: {
-				homeownerId: true,
-			},
-		});
 
 		if (!house) {
 			return NextResponse.json(

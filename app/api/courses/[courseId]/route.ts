@@ -9,27 +9,47 @@ export async function GET(
 	{ params }: { params: { courseId: string } }
 ) {
 	try {
-		const course = await prisma.course.findUnique({
-			where: {
-				id: params.courseId,
-			},
-			include: {
-				instructor: {
-					select: {
-						name: true,
-						email: true,
+		const session = await getServerSession(authOptions);
+		console.log('Session in GET request:', session);
+
+		const [course, enrollment, ratings] = await Promise.all([
+			prisma.course.findUnique({
+				where: {
+					id: params.courseId,
+				},
+				include: {
+					instructor: {
+						select: {
+							name: true,
+							email: true,
+						},
+					},
+					Week: {
+						include: {
+							topics: true,
+						},
+						orderBy: {
+							week: 'asc',
+						},
 					},
 				},
-				Week: {
-					include: {
-						topics: true,
-					},
-					orderBy: {
-						week: 'asc',
-					},
+			}),
+			session?.user?.id
+				? prisma.enrollment.findUnique({
+						where: {
+							userId_courseId: {
+								userId: session.user.id,
+								courseId: params.courseId,
+							},
+						},
+				  })
+				: null,
+			prisma.courseRating.findMany({
+				where: {
+					courseId: params.courseId,
 				},
-			},
-		});
+			}),
+		]);
 
 		if (!course) {
 			return NextResponse.json(
@@ -37,6 +57,16 @@ export async function GET(
 				{ status: 404 }
 			);
 		}
+
+		// Calculate average rating
+		const averageRating =
+			ratings.length > 0
+				? ratings.reduce(
+						(acc: number, curr: { rating: number }) =>
+							acc + curr.rating,
+						0
+				  ) / ratings.length
+				: 0;
 
 		// Parse JSON fields and structure weeks and topics
 		const parsedCourse = {
@@ -57,6 +87,9 @@ export async function GET(
 			whatYouWillLearn: course.whatYouWillLearn
 				? JSON.parse(course.whatYouWillLearn as string)
 				: [],
+			isEnrolled: !!enrollment,
+			rating: averageRating,
+			reviewsCount: ratings.length,
 		};
 
 		return NextResponse.json(parsedCourse);

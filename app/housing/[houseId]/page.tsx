@@ -43,6 +43,7 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import Map from '@/components/Map';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Rating } from '@/components/ui/rating';
 
 interface House {
 	id: string;
@@ -73,6 +74,7 @@ interface House {
 			email: string;
 		};
 	};
+	hasRented?: boolean;
 }
 
 export default function HouseDetailPage({
@@ -335,6 +337,12 @@ export default function HouseDetailPage({
 							<h1 className="text-3xl font-bold gradient-text">
 								{house.title}
 							</h1>
+							<Rating
+								type="house"
+								itemId={params.houseId}
+								canRate={house.hasRented}
+								className="mt-2"
+							/>
 							<div className="flex items-center text-muted-foreground mt-1">
 								<MapPin className="h-4 w-4 mr-1" />
 								{house.address}

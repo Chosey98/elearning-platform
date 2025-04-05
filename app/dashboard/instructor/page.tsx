@@ -564,7 +564,7 @@ export default function InstructorDashboard() {
 				title: 'Success',
 				description: 'Course created successfully!',
 			});
-			router.push('/dashboard/instructor/courses');
+			router.push('/dashboard/instructor');
 		} catch (error) {
 			console.error('Error creating course:', error);
 			toast({

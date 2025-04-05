@@ -40,6 +40,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '@/components/ui/dialog';
+import { Rating } from '@/components/ui/rating';
 
 interface Course {
 	id: string;
@@ -519,6 +520,12 @@ export default function CourseDetailPage({
 							<h1 className="text-3xl font-bold gradient-text">
 								{course.title}
 							</h1>
+							<Rating
+								type="course"
+								itemId={course.id}
+								canRate={course.isEnrolled}
+								className="mt-2"
+							/>
 							<div className="flex items-center text-muted-foreground mt-1">
 								<span className="flex items-center">
 									<Star className="h-4 w-4 text-yellow-400 mr-1" />{' '}
@@ -1089,28 +1096,6 @@ export default function CourseDetailPage({
 									</>
 								)}
 							</CardContent>
-							<CardFooter className="flex flex-col p-6 pt-0 space-y-4">
-								<div>
-									<h4 className="font-semibold mb-2">
-										Have a Question?
-									</h4>
-									<Textarea
-										placeholder="Write your message to the instructor"
-										className="mb-2"
-										value={message}
-										onChange={(e) =>
-											setMessage(e.target.value)
-										}
-									/>
-									<Button
-										variant="outline"
-										className="w-full border-primary/20"
-										onClick={handleContactInstructor}
-									>
-										Contact Instructor
-									</Button>
-								</div>
-							</CardFooter>
 						</Card>
 					</div>
 				</div>
