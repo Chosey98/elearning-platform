@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import Navbar from '@/components/navbar';
 import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/components/providers';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -21,19 +22,19 @@ export default function RootLayout({
 	return (
 		<html lang="en">
 			<body className={inter.className}>
-				<ThemeProvider
-					attribute="class"
-					defaultTheme="light"
-					enableSystem={false}
-					disableTransitionOnChange
-				>
-					<Navbar />
-					{children}
-					<Toaster />
-				</ThemeProvider>
+				<AuthProvider>
+					<ThemeProvider
+						attribute="class"
+						defaultTheme="light"
+						enableSystem={false}
+						disableTransitionOnChange
+					>
+						<Navbar />
+						{children}
+						<Toaster />
+					</ThemeProvider>
+				</AuthProvider>
 			</body>
 		</html>
 	);
 }
-
-import './globals.css';

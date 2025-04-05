@@ -1,10 +1,10 @@
 'use client';
 
 import type React from 'react';
-
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import {
 	Card,
@@ -98,24 +98,39 @@ export default function RegisterPage() {
 			return;
 		}
 
-		// In a real app, you would send this data to your API
 		try {
-			// Simulate API call
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-
-			// Store user in localStorage for demo purposes
-			// In a real app, you would use a proper auth solution
-			localStorage.setItem(
-				'user',
-				JSON.stringify({
-					id: Date.now().toString(),
+			// Register user
+			const response = await fetch('/api/register', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
 					name: formData.name,
 					email: formData.email,
+					password: formData.password,
 					phone: `${formData.phone.dialCode}${formData.phone.number}`,
 					nationality: formData.nationality,
 					role: formData.role,
-				})
-			);
+				}),
+			});
+
+			const data = await response.json();
+
+			if (!response.ok) {
+				throw new Error(data.error || 'Something went wrong');
+			}
+
+			// Sign in the user
+			const result = await signIn('credentials', {
+				email: formData.email,
+				password: formData.password,
+				redirect: false,
+			});
+
+			if (result?.error) {
+				throw new Error(result.error);
+			}
 
 			toast({
 				title: 'Account created!',
@@ -126,7 +141,10 @@ export default function RegisterPage() {
 		} catch (error) {
 			toast({
 				title: 'Something went wrong',
-				description: 'Please try again later.',
+				description:
+					error instanceof Error
+						? error.message
+						: 'Please try again later.',
 				variant: 'destructive',
 			});
 		} finally {

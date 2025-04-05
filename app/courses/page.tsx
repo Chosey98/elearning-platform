@@ -18,84 +18,67 @@ import {
 } from '@/components/ui/select';
 import { Search, Clock, User } from 'lucide-react';
 import Link from 'next/link';
+import { prisma } from '@/lib/prisma';
 
-// Mock course data
-const COURSES = [
-	{
-		id: 1,
-		title: 'Introduction to Frontend Development',
-		description:
-			'Learn the basics of HTML, CSS, and JavaScript to build your first website.',
-		level: 'Beginner',
-		duration: '8 weeks',
-		instructor: 'Sarah Johnson',
-		image: '/placeholder.svg?height=200&width=300',
-		category: 'Web Development',
-		color: 'from-purple-500 to-pink-500',
-	},
-	{
-		id: 2,
-		title: 'Advanced React Patterns',
-		description:
-			'Master advanced React concepts including hooks, context, and performance optimization.',
-		level: 'Advanced',
-		duration: '6 weeks',
-		instructor: 'Michael Chen',
-		image: '/placeholder.svg?height=200&width=300',
-		category: 'Frontend',
-		color: 'from-blue-500 to-cyan-500',
-	},
-	{
-		id: 3,
-		title: 'Data Science Fundamentals',
-		description:
-			'Introduction to data analysis, visualization, and machine learning basics.',
-		level: 'Intermediate',
-		duration: '10 weeks',
-		instructor: 'Emily Rodriguez',
-		image: '/placeholder.svg?height=200&width=300',
-		category: 'Data Science',
-		color: 'from-green-500 to-teal-500',
-	},
-	{
-		id: 4,
-		title: 'Mobile App Development with Flutter',
-		description:
-			'Build cross-platform mobile applications with Flutter and Dart.',
-		level: 'Intermediate',
-		duration: '8 weeks',
-		instructor: 'David Kim',
-		image: '/placeholder.svg?height=200&width=300',
-		category: 'Mobile Development',
-		color: 'from-orange-500 to-amber-500',
-	},
-	{
-		id: 5,
-		title: 'Python for Beginners',
-		description:
-			'Start your programming journey with Python, one of the most popular programming languages.',
-		level: 'Beginner',
-		duration: '6 weeks',
-		instructor: 'Alex Thompson',
-		image: '/placeholder.svg?height=200&width=300',
-		category: 'Programming',
-		color: 'from-yellow-500 to-amber-500',
-	},
-	{
-		id: 6,
-		title: 'UX/UI Design Principles',
-		description:
-			'Learn the fundamentals of user experience and interface design to create beautiful, functional products.',
-		level: 'Beginner',
-		duration: '7 weeks',
-		instructor: 'Jessica Lee',
-		image: '/placeholder.svg?height=200&width=300',
-		category: 'Design',
-		color: 'from-pink-500 to-rose-500',
-	},
-];
+async function getCourses() {
+	try {
+		console.log('Fetching all courses');
+		const courses = await prisma.course.findMany({
+			include: {
+				instructor: {
+					select: {
+						name: true,
+						email: true,
+					},
+				},
+			},
+		});
 
-export default function CoursesPage() {
+		console.log(
+			'Raw courses from database:',
+			JSON.stringify(courses, null, 2)
+		);
+
+		return courses.map((course) => {
+			try {
+				return {
+					...course,
+					syllabus: course.syllabus
+						? JSON.parse(course.syllabus)
+						: [],
+					requirements: course.requirements
+						? JSON.parse(course.requirements)
+						: [],
+					whatYouWillLearn: course.whatYouWillLearn
+						? JSON.parse(course.whatYouWillLearn)
+						: [],
+				};
+			} catch (error) {
+				console.error(
+					`Error parsing JSON fields for course ${course.id}:`,
+					error
+				);
+				return {
+					...course,
+					syllabus: [],
+					requirements: [],
+					whatYouWillLearn: [],
+				};
+			}
+		});
+	} catch (error) {
+		console.error('Error fetching courses:', error);
+		return [];
+	}
+}
+
+export default async function CoursesPage() {
+	const courses = await getCourses();
+	console.log(
+		'Processed courses for display:',
+		JSON.stringify(courses, null, 2)
+	);
+
 	return (
 		<div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
 			<div className="container mx-auto py-8 px-4">
@@ -164,66 +147,67 @@ export default function CoursesPage() {
 				</div>
 
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-					{COURSES.map((course) => (
-						<Card
+					{courses.map((course) => (
+						<Link
+							href={`/courses/${course.id}`}
 							key={course.id}
-							className="overflow-hidden border-0 shadow-lg card-hover bg-white"
+							className="block"
 						>
-							<div
-								className={`h-3 w-full bg-gradient-to-r ${course.color}`}
-							></div>
-							<div className="relative">
-								<img
-									src={course.image || '/placeholder.svg'}
-									alt={course.title}
-									className="w-full h-48 object-cover"
-								/>
-								<div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-								<Badge className="absolute bottom-3 right-3 bg-white/90 text-primary hover:bg-white/80">
-									{course.level}
-								</Badge>
-							</div>
-							<CardHeader>
-								<div className="flex justify-between items-start">
-									<CardTitle className="text-xl">
-										{course.title}
-									</CardTitle>
+							<Card className="overflow-hidden border-0 shadow-lg card-hover bg-white transition-transform hover:scale-[1.02]">
+								<div className="h-3 w-full bg-gradient-to-r from-purple-500 to-pink-500"></div>
+								<div className="relative">
+									<img
+										src={
+											course.imageUrl ||
+											'/placeholder.svg'
+										}
+										alt={course.title}
+										className="w-full h-48 object-cover"
+									/>
+									<div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+									<Badge className="absolute bottom-3 right-3 bg-white/90 text-primary hover:bg-white/80">
+										{course.level}
+									</Badge>
 								</div>
-								<CardDescription className="flex items-center gap-1">
-									<span className="text-secondary font-medium">
-										{course.category}
-									</span>{' '}
-									• {course.duration}
-								</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<p className="text-sm text-gray-500">
-									{course.description}
-								</p>
-								<div className="flex items-center gap-2 mt-4">
-									<User className="h-4 w-4 text-muted-foreground" />
-									<p className="text-sm text-muted-foreground">
-										{course.instructor}
+								<CardHeader>
+									<div className="flex justify-between items-start">
+										<CardTitle className="text-xl">
+											{course.title}
+										</CardTitle>
+									</div>
+									<CardDescription className="flex items-center gap-1">
+										<span className="text-secondary font-medium">
+											{course.category}
+										</span>{' '}
+										• {course.duration}
+									</CardDescription>
+								</CardHeader>
+								<CardContent>
+									<p className="text-sm text-gray-500 mb-4">
+										{course.description}
 									</p>
-								</div>
-								<div className="flex items-center gap-2 mt-1">
-									<Clock className="h-4 w-4 text-muted-foreground" />
-									<p className="text-sm text-muted-foreground">
-										{course.duration}
-									</p>
-								</div>
-							</CardContent>
-							<CardFooter>
-								<Link
-									href={`/courses/${course.id}`}
-									className="w-full"
-								>
-									<Button className="w-full gradient-bg hover:opacity-90 transition-opacity">
+									<div className="flex justify-between items-center">
+										<div className="flex items-center gap-2">
+											<Clock className="h-4 w-4 text-muted-foreground" />
+											<span className="text-sm text-muted-foreground">
+												{course.duration}
+											</span>
+										</div>
+										<div className="flex items-center gap-2">
+											<User className="h-4 w-4 text-muted-foreground" />
+											<span className="text-sm text-muted-foreground">
+												{course.instructor.name}
+											</span>
+										</div>
+									</div>
+								</CardContent>
+								<CardFooter>
+									<Button className="w-full gradient-bg hover:opacity-90">
 										View Course
 									</Button>
-								</Link>
-							</CardFooter>
-						</Card>
+								</CardFooter>
+							</Card>
+						</Link>
 					))}
 				</div>
 			</div>

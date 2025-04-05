@@ -1,135 +1,113 @@
-"use client"
+'use client';
 
-import type React from "react"
-
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
-import { LockKeyhole } from "lucide-react"
+import { useState } from 'react';
+import { signIn } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
+import Link from 'next/link';
 
 export default function LoginPage() {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  })
+	const router = useRouter();
+	const searchParams = useSearchParams();
+	const { toast } = useToast();
+	const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+	const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+	async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		setIsLoading(true);
 
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+		const formData = new FormData(event.currentTarget);
+		const email = formData.get('email') as string;
+		const password = formData.get('password') as string;
 
-      // In a real app, you would validate credentials with your API
-      // For demo purposes, we'll just set a user in localStorage
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          id: "1",
-          name: "Demo User",
-          email: formData.email,
-        }),
-      )
+		try {
+			const result = await signIn('credentials', {
+				email,
+				password,
+				redirect: false,
+			});
 
-      toast({
-        title: "Login successful!",
-        description: "Welcome back to the platform.",
-      })
+			if (result?.error) {
+				toast({
+					title: 'Error',
+					description: 'Invalid email or password',
+					variant: 'destructive',
+				});
+			} else {
+				toast({
+					title: 'Success',
+					description: 'Logged in successfully',
+				});
+				router.push(callbackUrl);
+				router.refresh();
+			}
+		} catch (error) {
+			toast({
+				title: 'Error',
+				description: 'Something went wrong. Please try again.',
+				variant: 'destructive',
+			});
+		} finally {
+			setIsLoading(false);
+		}
+	}
 
-      router.push("/dashboard")
-    } catch (error) {
-      toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] p-4 light-gradient-2">
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-secondary/20 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/20 rounded-full blur-3xl"></div>
-      </div>
-
-      <Card className="w-full max-w-md relative z-10 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-        <CardHeader className="space-y-1">
-          <div className="flex justify-center mb-2">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <LockKeyhole className="h-6 w-6 text-primary" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl text-center gradient-text">Welcome Back</CardTitle>
-          <CardDescription className="text-center">Enter your credentials to access your account</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="john@example.com"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="border-primary/20 focus-visible:ring-primary"
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                  Forgot password?
-                </Link>
-              </div>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                className="border-primary/20 focus-visible:ring-primary"
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button
-              className="w-full gradient-bg hover:opacity-90 transition-opacity"
-              type="submit"
-              disabled={isLoading}
-            >
-              {isLoading ? "Signing in..." : "Sign in"}
-            </Button>
-            <div className="text-center text-sm">
-              Don't have an account?{" "}
-              <Link href="/register" className="text-primary font-medium hover:underline">
-                Create account
-              </Link>
-            </div>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
-  )
+	return (
+		<div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-50 to-white p-4">
+			<Card className="w-full max-w-md">
+				<CardHeader className="space-y-1">
+					<CardTitle className="text-2xl font-bold text-center">
+						Login
+					</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<form onSubmit={onSubmit} className="space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="email">Email</Label>
+							<Input
+								id="email"
+								name="email"
+								type="email"
+								placeholder="john@example.com"
+								required
+								disabled={isLoading}
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="password">Password</Label>
+							<Input
+								id="password"
+								name="password"
+								type="password"
+								required
+								disabled={isLoading}
+							/>
+						</div>
+						<Button
+							type="submit"
+							className="w-full"
+							disabled={isLoading}
+						>
+							{isLoading ? 'Logging in...' : 'Login'}
+						</Button>
+					</form>
+					<div className="mt-4 text-center text-sm">
+						Don&apos;t have an account?{' '}
+						<Link
+							href="/signup"
+							className="text-primary hover:underline"
+						>
+							Sign up
+						</Link>
+					</div>
+				</CardContent>
+			</Card>
+		</div>
+	);
 }
-

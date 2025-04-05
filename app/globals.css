@@ -3,82 +3,105 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+	:root {
+		--background: 0 0% 100%;
+		--foreground: 222.2 84% 4.9%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+		--card: 0 0% 100%;
+		--card-foreground: 222.2 84% 4.9%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+		--popover: 0 0% 100%;
+		--popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 263 70% 50%;
-    --primary-foreground: 210 40% 98%;
+		--primary: 263 70% 50%;
+		--primary-foreground: 210 40% 98%;
 
-    --secondary: 180 100% 50%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+		--secondary: 180 100% 50%;
+		--secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+		--muted: 210 40% 96.1%;
+		--muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 326 100% 60%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+		--accent: 326 100% 60%;
+		--accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+		--destructive: 0 84.2% 60.2%;
+		--destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 263 70% 50%;
+		--border: 214.3 31.8% 91.4%;
+		--input: 214.3 31.8% 91.4%;
+		--ring: 263 70% 50%;
 
-    --radius: 0.5rem;
-  }
+		--radius: 0.5rem;
+	}
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+	* {
+		@apply border-border;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
 }
 
+/* Custom gradient styles */
 .gradient-bg {
-  background: linear-gradient(135deg, hsl(263, 70%, 50%), hsl(326, 100%, 60%));
+	background: linear-gradient(
+		135deg,
+		hsl(263, 70%, 50%),
+		hsl(326, 100%, 60%)
+	);
 }
 
 .gradient-text {
-  background: linear-gradient(90deg, hsl(263, 70%, 50%), hsl(326, 100%, 60%));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: transparent;
+	background: linear-gradient(90deg, hsl(263, 70%, 50%), hsl(326, 100%, 60%));
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+	color: transparent;
 }
 
+/* Card hover animations */
 .card-hover {
-  transition: all 0.3s ease;
+	transition: all 0.3s ease;
 }
 
 .card-hover:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+	transform: translateY(-5px);
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
+		0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
+/* Feature icons and gradients */
 .feature-icon-bg {
-  background: linear-gradient(135deg, hsl(263, 70%, 92%), hsl(326, 100%, 92%));
+	background: linear-gradient(
+		135deg,
+		hsl(263, 70%, 92%),
+		hsl(326, 100%, 92%)
+	);
 }
 
 .light-gradient-1 {
-  background: linear-gradient(135deg, #f0e7ff, #fff0f8);
+	background: linear-gradient(135deg, #f0e7ff, #fff0f8);
 }
 
 .light-gradient-2 {
-  background: linear-gradient(135deg, #e6f9ff, #f0f9ff);
+	background: linear-gradient(135deg, #e6f9ff, #f0f9ff);
 }
 
 .light-gradient-3 {
-  background: linear-gradient(135deg, #fff0f8, #fff5f5);
+	background: linear-gradient(135deg, #fff0f8, #fff5f5);
 }
 
+.radix-dropdown-menu-content {
+	z-index: 100;
+}
+
+.border-gray-200 {
+	border-color: rgba(229, 231, 235, var(--tw-border-opacity)) !important;
+}
+
+.border-border {
+	border-color: hsl(var(--border)) !important;
+}

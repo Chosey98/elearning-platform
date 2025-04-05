@@ -18,10 +18,20 @@ yarn-error.log*
 
 # env files
 .env*
-
+!.env.example
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Uploads
+public/uploads/*
+!public/uploads/.gitkeep
+!public/uploads/housing/
+public/uploads/housing/*
+!public/uploads/housing/.gitkeep
+!public/uploads/housing/images/
+public/uploads/housing/images/*
+!public/uploads/housing/images/.gitkeep

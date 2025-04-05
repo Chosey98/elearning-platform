@@ -1,0 +1,171 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "sqlite"
+    url      = "file:./dev.db"
+}
+
+model User {
+    id             String          @id @default(cuid())
+    name           String
+    email          String          @unique
+    password       String
+    phone          String?
+    nationality    String?
+    role           String          @default("student")
+    createdAt      DateTime        @default(now())
+    updatedAt      DateTime        @updatedAt
+    courses        Course[]        @relation("InstructorCourses")
+    enrollments    Enrollment[]
+    TopicProgress  TopicProgress[]
+    favorites      Favorite[]
+    houseFavorites HouseFavorite[]
+    ownedHouses    House[]         @relation("HomeownerHouses")
+    rentals        Rental[]        @relation("RenterRentals")
+    houses         House[]
+}
+
+model Course {
+    id               String       @id @default(cuid())
+    title            String
+    description      String
+    fullDescription  String
+    level            String
+    category         String
+    duration         String
+    price            String
+    imageUrl         String?
+    syllabus         String // Store as JSON string
+    requirements     String // Store as JSON string
+    whatYouWillLearn String // Store as JSON string
+    instructorId     String
+    instructor       User         @relation("InstructorCourses", fields: [instructorId], references: [id])
+    lastUpdated      DateTime     @default(now())
+    language         String
+    createdAt        DateTime     @default(now())
+    updatedAt        DateTime     @updatedAt
+    enrollments      Enrollment[]
+    Week             Week[]
+    Favorite         Favorite[]
+
+    @@index([instructorId])
+}
+
+model Enrollment {
+    id        String   @id @default(cuid())
+    userId    String
+    courseId  String
+    progress  Int      @default(0)
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, courseId])
+}
+
+model Week {
+    id        String   @id @default(cuid())
+    week      Int
+    title     String
+    duration  String
+    courseId  String
+    course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+    topics    Topic[]
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model Topic {
+    id        String          @id @default(cuid())
+    title     String
+    content   String // JSON string of TopicContent[]
+    weekId    String
+    week      Week            @relation(fields: [weekId], references: [id], onDelete: Cascade)
+    progress  TopicProgress[]
+    createdAt DateTime        @default(now())
+    updatedAt DateTime        @updatedAt
+}
+
+model TopicProgress {
+    id        String   @id @default(cuid())
+    userId    String
+    topicId   String
+    completed Boolean  @default(false)
+    topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, topicId])
+}
+
+model Favorite {
+    id        String   @id @default(cuid())
+    userId    String
+    courseId  String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+    createdAt DateTime @default(now())
+
+    @@unique([userId, courseId])
+}
+
+model House {
+    id              String          @id @default(cuid())
+    title           String
+    description     String
+    address         String
+    latitude        Float?
+    longitude       Float?
+    price           Float
+    bedrooms        Int
+    bathrooms       Int
+    size            Float
+    amenities       String // JSON string
+    images          String // JSON string
+    status          String          @default("available")
+    type            String
+    homeownerId     String
+    homeowner       User            @relation("HomeownerHouses", fields: [homeownerId], references: [id])
+    currentRentalId String?         @unique
+    currentRental   Rental?         @relation("CurrentRental", fields: [currentRentalId], references: [id])
+    rentals         Rental[]        @relation("HouseRental")
+    createdAt       DateTime        @default(now())
+    updatedAt       DateTime        @updatedAt
+    favorites       HouseFavorite[]
+    User            User?           @relation(fields: [userId], references: [id])
+    userId          String?
+
+    @@index([homeownerId])
+}
+
+model Rental {
+    id           String    @id @default(cuid())
+    startDate    DateTime
+    endDate      DateTime?
+    status       String    @default("active")
+    renterId     String
+    renter       User      @relation("RenterRentals", fields: [renterId], references: [id])
+    houseId      String
+    house        House     @relation("HouseRental", fields: [houseId], references: [id])
+    currentHouse House?    @relation("CurrentRental")
+    createdAt    DateTime  @default(now())
+    updatedAt    DateTime  @updatedAt
+
+    @@index([renterId])
+    @@index([houseId])
+}
+
+model HouseFavorite {
+    id        String   @id @default(cuid())
+    userId    String
+    houseId   String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    house     House    @relation(fields: [houseId], references: [id], onDelete: Cascade)
+    createdAt DateTime @default(now())
+
+    @@unique([userId, houseId])
+}
